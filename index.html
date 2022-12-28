@@ -6,28 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 <style>
-
+  /* Set the height of the div and add a scrollbar */
+  .scrollable-div {
+    height: 300px;
+    overflow: scroll;
+  }
 </style>
 </head>
 <body>
-<canvas id="candleStickChart" style="width: 100%; height: 320px;"></canvas>
-    <script>
+    <canvas id="myCanvas"></canvas>
+  <script>
   // Get the canvas element
-  let canvas = document.getElementById('candleStickChart');
+  let canvas = document.getElementById('myCanvas');
   // Get the 2D drawing context
   let ctx = canvas.getContext('2d');
 
-  // Set the fill style to blue
-ctx.fillStyle = 'blue';
-// Fill the entire canvas with the fill style
-ctx.fillRect(0, 0, canvas.width, canvas.height)
+    // Set the dimensions of the canvas
+    canvas.width = 500;
+  canvas.height = 3000; // Set the height to a large value to allow for scrolling
 
+  
   // Define the data for the candlestick chart
-
-
   let graph =[]
   let i 
-  let data
+  let data= []
   fetch('./data.csv')
 .then(response => response.text())
 .then(text => {
@@ -56,81 +58,128 @@ ctx.fillRect(0, 0, canvas.width, canvas.height)
   data= [... graph]
   console.log(data)
   
-  
-  
-  // Set the chart margin and bar width
-  let margin = 10;
-  let barWidth = (canvas.width - 2 * margin) / data.length;
-  
-  // Define a function to draw a candlestick
-  function drawCandlestick(x, open, high, low, close) {
-    // Set the candlestick color based on the opening and closing price
-    ctx.fillStyle = open < close ? '#00aa00' : '#aa0000';
-    // Draw the candlestick body
-    ctx.fillRect(x + margin, open, barWidth, close - open);
-    // Draw the high and low lines
-    ctx.moveTo(x + margin + barWidth / 2, high);
-    ctx.lineTo(x + margin + barWidth / 2, low);
-    ctx.stroke();
-  }
-  
-  // Iterate through the data and draw the candlesticks
-  for (let i = 0; i < data.length; i++) {
-    let x = i * barWidth;
-    let open = data[i].open;
-    let high = data[i].high;
-    let low = data[i].low;
-    let close = data[i].close;
-    drawCandlestick(x, open, high, low, close);
-  }
-  
-  function zoom(factor) {
-    // Save the current transformation matrix
-    ctx.save();
-  // Reset the transformation matrix to the identity matrix
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  // Scale the canvas by the specified factor
-  ctx.scale(factor, factor);
-  // Redraw the candlestick chart
-  for (let i = 0; i < data.length; i++) {
-    let x = i * barWidth;
-    let open = data[i].open;
-    let high = data[i].high;
-    let low = data[i].low;
-    let close = data[i].close;
-    // ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    drawCandlestick(x, open, high, low, close);
-  }
-  // Restore the previous transformation matrix
-  ctx.restore();
-}
+  // Set the dimensions of the canvas
+  canvas.width = 500;
+  canvas.height = 300;
 
-function scroll(offset) {
-  // Save the current transformation matrix
+
+
+  // Set the spacing between each bar
+  let barSpacing = 20;
+  // Set the width of each bar
+  let barWidth = 100
+
+  // Initialize the translation and scale values
+  let translateX = 0;
+  let translateY = 0;
+  let scale = 1;
+
+  // Flag to keep track of whether the canvas is being dragged
+  let isDragging = false;
+  // letiables to store the starting position of the drag
+  let startX;
+  let startY;
+
+  // Add event listeners to the canvas to handle panning and zooming
+  canvas.addEventListener('mousedown', startDrag);
+  canvas.addEventListener('mousemove', drag);
+  canvas.addEventListener('mouseup', endDrag);
+  canvas.addEventListener('wheel', zoom);
+
+  function startDrag(event) {
+    isDragging = true;
+    startX = event.clientX;
+    startY = event.clientY;
+  }
+
+  function drag(event) {
+    if (isDragging) {
+      // Calculate the translation values based on the change in mouse position
+      let deltaX = event.clientX - startX;
+      let deltaY = event.clientY - startY;
+      // Update the translation values
+      translateX += deltaX;
+      translateY += deltaY;
+      // Update the starting position for the next drag event
+      startX = event.clientX;
+      startY = event.clientY;
+      // Redraw the chart with the updated translation values
+      drawChart();
+    }
+  }
+
+  function endDrag(event) {
+    isDragging = false;
+  }
+
+  function zoom(event) {
+    // Calculate the new scale value based on the scroll delta
+    let delta = event.deltaY;
+    scale += delta * 0.001;
+    // Clamp the scale value to a minimum of 0.1
+    scale = Math.max(scale, 0.1);
+    // Redraw
+    drawChart();
+  }
+    function zoom(event) {
+    // Calculate the new scale value based on the scroll delta
+    let delta = event.deltaY;
+    scale += delta * 0.001;
+    // Clamp the scale value to a minimum of 0.1
+    scale = Math.max(scale, 0.1);
+    // Redraw the chart with the updated scale value
+    drawChart();
+  }
+
+  function drawChart() {
+  // Create a linear gradient for the canvas background
+  let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#E3F2FD');
+  gradient.addColorStop(1, '#BBDEFB');
+  // Set the canvas fill style to the gradient
+  ctx.fillStyle = gradient;
+  // Fill the entire canvas with the gradient
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Save the current context state
   ctx.save();
-  // Translate the canvas by the specified offset
-  ctx.translate(offset, 0);
-  // Redraw the candlestick chart
-  for (let i = 0; i < data.length; i++) {
-    let x = i * barWidth;
-    let open = data[i].open;
-    let high = data[i].high;
-    let low = data[i].low;
-    let close = data[i].close;
-    drawCandlestick(x, open, high, low, close);
+  // Apply the translation and scale transformations to the context
+  ctx.translate(translateX, translateY);
+  ctx.scale(scale, scale);
+    // Loop through the data to draw the chart
+    for (let i = data.length - 1; i >= 0; i--) {
+      if(i==data.length){
+        // prep canvas
+
+      }
+      let u=-1*i 
+      // Calculate the x position of the bar
+      let x = u * (barWidth + barSpacing) + 3*barWidth;
+      // Calculate the height of the bar
+      let barHeight = data[i].close - data[i].open;
+      // Calculate the y position of the bar
+      let y = (data[i].close > data[i].open) ? data[i].open : data[i].close;
+      // Set the color of the bar
+      ctx.fillStyle = (data[i].close > data[i].open) ? 'green' : 'red';
+      // Draw the bar
+      ctx.fillRect(x, y, barWidth, barHeight);
+      // Draw the high/low lines
+     
+      ctx.fillStyle ='blue'
+      
+    ctx.fillRect(x + barWidth/4, data[i].high, barWidth/2, 1);
+    ctx.fillRect(x + barWidth/4, data[i].low, barWidth/2, 1);2
+      // ctx.moveTo(x + barWidth / 2, data[i].high);
+      // ctx.lineTo(x + barWidth / 2, data[i].low);
+      // ctx.stroke();
+    }
+    // Restore the context state
+    ctx.restore();
   }
-  // Restore the previous transformation matrix
-  ctx.restore();
-}
 
-// user inputs
-canvas.addEventListener('click',()=>{
+  // Draw the initial chart
+  drawChart();
 
-
-  zoom(2)
-scroll(-27 )
-})
 
 })
 </script>
