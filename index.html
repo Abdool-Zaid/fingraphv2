@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+<style>
+
+</style>
+</head>
+<body>
+<canvas id="candleStickChart" style="width: 100%; height: 320px;"></canvas>
+    <script>
+  // Get the canvas element
+  let canvas = document.getElementById('candleStickChart');
+  // Get the 2D drawing context
+  let ctx = canvas.getContext('2d');
+
+  // Define the data for the candlestick chart
+
+
+  let graph =[]
+  let i 
+  let data
+fetch('file:///C:/Users/Zaid/Desktop/graphtest/data.csv')
+.then(response => response.text())
+.then(text => {
+  i = text.split("|").length - 1;
+  let  data = text.split('|')
+  data.forEach(candle => {
+    candle.split('\r\n')
+    candle=candle.trim()
+       let cdata= candle.split(',')
+       let index  = cdata[0]
+       let open = cdata[1]
+       let high = cdata[2]
+       let close = cdata[3]
+       let low = cdata[4]
+       let volume = cdata[5]
+       graph.push(
+         {index,
+      open,
+      high,
+      low,
+      close,
+      volume}
+      )   
+    });
+    graph.pop()
+  data= [... graph]
+  console.log(data)
+})
+
+
+
+  // Set the chart margin and bar width
+  let margin = 10;
+  let barWidth = (canvas.width - 2 * margin) / data.length;
+
+  // Define a function to draw a candlestick
+  function drawCandlestick(x, open, high, low, close) {
+    // Set the candlestick color based on the opening and closing price
+    ctx.fillStyle = open < close ? '#00aa00' : '#aa0000';
+    // Draw the candlestick body
+    ctx.fillRect(x + margin, open, barWidth, close - open);
+    // Draw the high and low lines
+    ctx.moveTo(x + margin + barWidth / 2, high);
+    ctx.lineTo(x + margin + barWidth / 2, low);
+    ctx.stroke();
+  }
+
+  // Iterate through the data and draw the candlesticks
+  for (let i = 0; i < data.length; i++) {
+    let x = i * barWidth;
+    let open = data[i].open;
+    let high = data[i].high;
+    let low = data[i].low;
+    let close = data[i].close;
+    drawCandlestick(x, open, high, low, close);
+  }
+
+  function zoom(factor) {
+  // Save the current transformation matrix
+  ctx.save();
+  // Reset the transformation matrix to the identity matrix
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // Scale the canvas by the specified factor
+  ctx.scale(factor, factor);
+  // Redraw the candlestick chart
+  for (let i = 0; i < data.length; i++) {
+    let x = i * barWidth;
+    let open = data[i].open;
+    let high = data[i].high;
+    let low = data[i].low;
+    let close = data[i].close;
+    // ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawCandlestick(x, open, high, low, close);
+  }
+  // Restore the previous transformation matrix
+  ctx.restore();
+}
+
+function scroll(offset) {
+  // Save the current transformation matrix
+  ctx.save();
+  // Translate the canvas by the specified offset
+  ctx.translate(offset, 0);
+  // Redraw the candlestick chart
+  for (let i = 0; i < data.length; i++) {
+    let x = i * barWidth;
+    let open = data[i].open;
+    let high = data[i].high;
+    let low = data[i].low;
+    let close = data[i].close;
+    drawCandlestick(x, open, high, low, close);
+  }
+  // Restore the previous transformation matrix
+  ctx.restore();
+}
+
+
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+</script>
+</body>
+</html>
