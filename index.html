@@ -17,13 +17,18 @@
   // Get the 2D drawing context
   let ctx = canvas.getContext('2d');
 
+  // Set the fill style to blue
+ctx.fillStyle = 'blue';
+// Fill the entire canvas with the fill style
+ctx.fillRect(0, 0, canvas.width, canvas.height)
+
   // Define the data for the candlestick chart
 
 
   let graph =[]
   let i 
   let data
-fetch('https://github.com/Abdool-Zaid/fingraphv2/blob/main/data.csv')
+  fetch('./data.csv')
 .then(response => response.text())
 .then(text => {
   i = text.split("|").length - 1;
@@ -50,14 +55,13 @@ fetch('https://github.com/Abdool-Zaid/fingraphv2/blob/main/data.csv')
     graph.pop()
   data= [... graph]
   console.log(data)
-})
-
-
-
+  
+  
+  
   // Set the chart margin and bar width
   let margin = 10;
   let barWidth = (canvas.width - 2 * margin) / data.length;
-
+  
   // Define a function to draw a candlestick
   function drawCandlestick(x, open, high, low, close) {
     // Set the candlestick color based on the opening and closing price
@@ -69,7 +73,7 @@ fetch('https://github.com/Abdool-Zaid/fingraphv2/blob/main/data.csv')
     ctx.lineTo(x + margin + barWidth / 2, low);
     ctx.stroke();
   }
-
+  
   // Iterate through the data and draw the candlesticks
   for (let i = 0; i < data.length; i++) {
     let x = i * barWidth;
@@ -79,10 +83,10 @@ fetch('https://github.com/Abdool-Zaid/fingraphv2/blob/main/data.csv')
     let close = data[i].close;
     drawCandlestick(x, open, high, low, close);
   }
-
+  
   function zoom(factor) {
-  // Save the current transformation matrix
-  ctx.save();
+    // Save the current transformation matrix
+    ctx.save();
   // Reset the transformation matrix to the identity matrix
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   // Scale the canvas by the specified factor
@@ -120,8 +124,15 @@ function scroll(offset) {
   ctx.restore();
 }
 
+// user inputs
+canvas.addEventListener('click',()=>{
 
 
+  zoom(2)
+scroll(-27 )
+})
+
+})
 </script>
 
 
