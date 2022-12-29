@@ -111,11 +111,15 @@
       let y = (data[i].close > data[i].open) ? data[i].open : data[i].close;
       ctx.fillStyle = (data[i].close > data[i].open) ? 'green' : 'red';
       ctx.fillRect(x, y, barWidth, barHeight);
-     
+      
       ctx.fillStyle ='blue'
       
     ctx.fillRect(x + barWidth/4, data[i].high, barWidth/2, 1);
-    ctx.fillRect(x + barWidth/4, data[i].low, barWidth/2, 1);2
+    ctx.fillRect(x + barWidth/2 -1, data[i].high,2,data[i].low- data[i].high );
+    ctx.fillRect(x + barWidth/4, data[i].low, barWidth/2, 1);
+    
+    ctx.fillStyle = (data[i].close > data[i].open) ? 'green' : 'red';
+    ctx.fillRect(x , canvas.height-data[i].volume , barWidth, data[i].volume);
     }
     ctx.restore();
   }
@@ -123,19 +127,10 @@
   drawChart();
 
 
+
+
+
 })
-</script>
-
-
-
-
-
-
-
-
-
-
-
 </script>
 </body>
 </html>
