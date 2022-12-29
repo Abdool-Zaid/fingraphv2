@@ -122,8 +122,18 @@
     ctx.fillRect(x , canvas.height-data[i].volume , barWidth, data[i].volume);
     }
     ctx.restore();
+    if (hoverIndex !== null) {
+    let x = (data.length - 1 - hoverIndex) * (barWidth + barSpacing);
+    ctx.font = '14px sans-serif';
+    ctx.fillStyle = 'black';
+    ctx.fillText('Open: ' + data[hoverIndex].open, x, 20);
+    ctx.fillText('Close: ' + data[hoverIndex].close, x, 40);
+    ctx.fillText('High: ' + data[hoverIndex].high, x, 60);
+    ctx.fillText('Low: ' + data[hoverIndex].low, x, 80);
+  }
   }
 
+  
   drawChart();
 
 
