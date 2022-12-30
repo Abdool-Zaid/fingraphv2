@@ -21,9 +21,9 @@
 let target= document.querySelector('#target')  
   let ctx = canvas.getContext('2d');
   let graph =[]
-  let i 
+  let arr=[]
   let data= []
-
+  let u = true
   fetch('./Binance_BTCEUR_d.csv')
 .then(response => response.text())
 .then(text => {
@@ -57,8 +57,9 @@ let target= document.querySelector('#target')
         }
       )   
     });
-    // remove first two object as they don't contain any real data
+    // remove first two object and last as they don't contain any real data
     graph.shift()
+    graph.pop()
     graph.shift()
   data= [... graph]
   graph=[]
@@ -66,7 +67,6 @@ let target= document.querySelector('#target')
   //  to see all data points use  console.table(data) here
   canvas.width = 1000;
   canvas.height = 1000;
-
   let barSpacing = 20;
   let barWidth = 100
   let translateX = 0;
@@ -76,7 +76,9 @@ let target= document.querySelector('#target')
   let startX;
   let startY;
   let hoverIndex = null;
-
+  let imageData
+  let pixel
+  let counter
   // change graph based on user input
   canvas.addEventListener('pointerdown', startDrag);
   canvas.addEventListener('pointermove', drag);
@@ -119,16 +121,17 @@ let target= document.querySelector('#target')
     drawChart();
   }
  function readGraph(event){
-  let position =event.clientX
-   let graphPosition= -1
-  if (position<graph.at(graphPosition)){
-target.innerHTML=''    
-target.innerHTML=`${position}`    
-} 
-
+let x =graph.length-1
+let coor = 300
+let span = 120
+let init = arr[0]
+init =init.split('|')[0]
+let i =Math.abs((init-coor)/span)
+x= data[i]
+return x
 }
 //  used to keep candles within reasonable scale on graph , will add hover effect to display true data 
-  function logScale(value) {
+function logScale(value) {
   let canvasHeight = canvas.height
   let min = 1/100 * canvasHeight
   let max = 3/5 * canvasHeight
@@ -138,6 +141,7 @@ target.innerHTML=`${position}`
   let scaledValue = normalizedLogValue * canvasHeight *1000;
   return Math.abs(scaledValue) ;
 }
+
   function drawChart() {
   let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
   gradient.addColorStop(0, '#E3F2FD');
@@ -147,7 +151,7 @@ target.innerHTML=`${position}`
   ctx.save();
   ctx.translate(translateX, translateY);
   ctx.scale(scale, scale);
-  graph=[]
+  arr=[]
     for (let i = data.length - 1; i >= 0; i--) {
       let High=logScale(data[i].High)
       let Low=logScale(data[i].Low)
@@ -161,19 +165,58 @@ target.innerHTML=`${position}`
       // draw candle
       ctx.fillStyle = (Close > Open) ? 'green' : 'red';
       ctx.fillRect(x, y, barWidth, barHeight);
-graph.push(`${x}`)
-      // draw wick 
+      // draw wick  
       ctx.fillStyle ='blue'
       ctx.fillRect(x + barWidth/4, High, barWidth/2, 1);
       ctx.fillRect(x + barWidth/2 -1, High,2, Low -High);
       ctx.fillRect(x + barWidth/4, Low, barWidth/2, 1);
-      
+      arr.push(`${x}|${i}`)
       // draw volume
       ctx.fillStyle =  '#12131221';
       ctx.fillRect(x , canvas.height- tradecount , barWidth, tradecount);
     }
     ctx.restore();
-    
+    // draw target selector
+      
+    ctx.fillStyle =  '#43afbb22';
+    ctx.fillRect(canvas.width/2 -1.5, 0 , 3, canvas.height);
+    ctx.fillRect(canvas.width/2  -20 , canvas.height/2 -20 , 40, 40);
+    ctx.fillRect(0, canvas.height/2 -1.5, canvas.width, 3);
+   
+// set initial state
+if(u ==true){
+   counter =data.length -1
+  u=false
+  setInitialState()
+  let r = pixel[0];  
+  let g = pixel[1];  
+  let b = pixel[2];  
+  let a = pixel[3]; 
+  graph.push(`${r}${g}${b}${a}`)
+}
+function setInitialState(){
+  imageData = ctx.getImageData(500, 500, 2, canvas.height); 
+  pixel = imageData.data;  
+}
+  displayData()
+// check center color again
+// if  same counter = counter
+// if if left side of line is different but right is the same counter++  
+// if if right side of line is different but left is the same counter-- 
+// if left and right are the same do nothing 
+function displayData(){
+  target.innerHTML=`<p>Unix : ${data[counter].Unix}</p>
+  <p>Date : ${data[counter].Date}</p>
+                 <p>Symbol: ${data[counter].Symbol}</p>
+                  <p>Open : ${data[counter].Open}</p>
+                 <p>High : ${data[counter].High}</p>
+                  <p>Low  : ${data[counter].Low}</p>
+                 <p>Close : ${data[counter].Close}</p>
+             <p>Volume BTC: ${data[counter].Volume_BTC}</p>
+             <p>Volume EUR: ${data[counter].Volume_EUR}</p>
+             <p>tradecount: ${data[counter].tradecount}</p>
+          `
+}
   }
   drawChart();
 })
