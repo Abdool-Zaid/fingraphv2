@@ -18,34 +18,45 @@
   let graph =[]
   let i 
   let data= []
-  fetch('./data.csv')
+
+  fetch('./Binance_BTCEUR_d.csv')
 .then(response => response.text())
 .then(text => {
-  i = text.split("|").length - 1;
-  let  data = text.split('|')
+// take txt andf turn it into an array based on the row
+  let  data = text.split('\n')
   data.forEach(candle => {
-    candle.split('\r\n')
-    candle=candle.trim()
+    // take each row and read the data to an object
        let cdata= candle.split(',')
-       let index  = cdata[0]
-       let open = cdata[1]
-       let high = cdata[2]
-       let close = cdata[3]
-       let low = cdata[4]
-       let volume = cdata[5]
+       let Unix  = cdata[0]
+       let Date = cdata[1]
+       let Symbol = cdata[2]
+       let Open = cdata[3]
+       let High = cdata[4]
+       let Low = cdata[5]
+       let Close = cdata[6]
+       let Volume_BTC= cdata[7]
+       let Volume_EUR = cdata[8]
+       let tradecount = cdata[9]
        graph.push(
-         {index,
-      open,
-      high,
-      low,
-      close,
-      volume}
+         {Unix,
+          Date,
+          Symbol,
+          Open,
+          High,
+          Low,
+          Close,
+          Volume_BTC,
+          Volume_EUR,
+          tradecount}
       )   
     });
-    graph.pop()
+    // remove first two object as they don't contain any real data
+    graph.shift()
+    graph.shift()
   data= [... graph]
-  canvas.width = 500;
-  canvas.height = 500;
+  //  to see all data points use  console.table(data) here
+  canvas.width = 1000;
+  canvas.height = 1000;
 
   let barSpacing = 20;
   let barWidth = 100
@@ -78,25 +89,6 @@
       startY = event.clientY;
       drawChart();
     }
-// Calculate the mouse position relative to the canvas
-let mouseX = event.clientX - canvas.getBoundingClientRect().left;
-  let mouseY = event.clientY - canvas.getBoundingClientRect().top;
-  // Loop through the data to find the hovered candlestick
-  for (let i = 0; i < data.length; i++) {
-    // Calculate the x position of the candlestick
-    let x = (data.length - 1 - i) * (barWidth + barSpacing);
-    // Check if the mouse is within the bounds of the candlestick
-    if (mouseX >= x && mouseX <= x + barWidth && mouseY >= data[i].low && mouseY <= data[i].high) {
-      // Set the hover index to the index of the hovered candlestick
-      hoverIndex = i;
-      break;
-    } else {
-      // Set the hover index to null if the mouse is not hovering over a candlestick
-      hoverIndex = null;
-    }
-  }
-  // Redraw the chart
-  drawChart();
 
   }
 
@@ -116,7 +108,16 @@ let mouseX = event.clientX - canvas.getBoundingClientRect().left;
     scale = Math.max(scale, 0.1);
     drawChart();
   }
-
+  function logScale(value) {
+  let canvasHeight = canvas.height
+  let min = 1/100 * canvasHeight
+  let max = 3/5 * canvasHeight
+  let logRange = max - min;
+  let logValue = Math.log(value);
+  let normalizedLogValue = (logValue - min) / logRange;
+  let scaledValue = normalizedLogValue * canvasHeight *600;
+  return Math.abs(scaledValue) ;
+}
   function drawChart() {
   let gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
   gradient.addColorStop(0, '#E3F2FD');
@@ -127,33 +128,36 @@ let mouseX = event.clientX - canvas.getBoundingClientRect().left;
   ctx.translate(translateX, translateY);
   ctx.scale(scale, scale);
     for (let i = data.length - 1; i >= 0; i--) {
+      let High=logScale(data[i].High)
+      let Low=logScale(data[i].Low)
+      let Open=logScale(data[i].Open)
+      let Close=logScale(data[i].Close)
+      let tradecount=logScale(data[i].tradecount)
       let u=-1*i 
       let x = u * (barWidth + barSpacing) + 3*barWidth;
-      let barHeight = data[i].close - data[i].open;
-      let y = (data[i].close > data[i].open) ? data[i].open : data[i].close;
-      ctx.fillStyle = (data[i].close > data[i].open) ? 'green' : 'red';
+      let barHeight = Close - Open ;
+      let y = (Close > Open) ? Open :Close;
+
+      // draw candle
+      ctx.fillStyle = (Close > Open) ? 'green' : 'red';
       ctx.fillRect(x, y, barWidth, barHeight);
-      
+
+      // draw wick 
       ctx.fillStyle ='blue'
-      
-    ctx.fillRect(x + barWidth/4, data[i].high, barWidth/2, 1);
-    ctx.fillRect(x + barWidth/2 -1, data[i].high,2,data[i].low- data[i].high );
-    ctx.fillRect(x + barWidth/4, data[i].low, barWidth/2, 1);
+    ctx.fillRect(x + barWidth/4, High, barWidth/2, 1);
+    ctx.fillRect(x + barWidth/2 -1, High,2, Low -High);
+    ctx.fillRect(x + barWidth/4, Low, barWidth/2, 1);
     
-    ctx.fillStyle = (data[i].close > data[i].open) ? 'green' : 'red';
-    ctx.fillRect(x , canvas.height-data[i].volume , barWidth, data[i].volume);
+    // draw volume
+    ctx.fillStyle =  '#12131221';
+    ctx.fillRect(x , canvas.height- tradecount , barWidth, tradecount);
     }
     ctx.restore();
     
   }
 
-  
+  console.log(logScale(data[0].High),logScale(data[0].Low),logScale(data[0].Open),logScale(data[0].Close),logScale(data[0].tradecount))
   drawChart();
-
-
-
-
-
 })
 </script>
 </body>
