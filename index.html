@@ -6,15 +6,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 <style>
- 
+ #target{
+  position:fixed;
+  top: 0;
+  left:0;
+ }
 </style>
 </head>
 <body>
     <canvas id="myCanvas"></canvas>
+    <div id="target"></div>
   <script>
   let canvas = document.getElementById('myCanvas');
+let target= document.querySelector('#target')  
   let ctx = canvas.getContext('2d');
-
   let graph =[]
   let i 
   let data= []
@@ -22,7 +27,7 @@
   fetch('./Binance_BTCEUR_d.csv')
 .then(response => response.text())
 .then(text => {
-// take txt andf turn it into an array based on the row
+// take txt and turn it into an array based on the row
   let  data = text.split('\n')
   data.forEach(candle => {
     // take each row and read the data to an object
@@ -37,6 +42,7 @@
        let Volume_BTC= cdata[7]
        let Volume_EUR = cdata[8]
        let tradecount = cdata[9]
+       
        graph.push(
          {Unix,
           Date,
@@ -47,13 +53,16 @@
           Close,
           Volume_BTC,
           Volume_EUR,
-          tradecount}
+          tradecount,
+        }
       )   
     });
     // remove first two object as they don't contain any real data
     graph.shift()
     graph.shift()
   data= [... graph]
+  graph=[]
+
   //  to see all data points use  console.table(data) here
   canvas.width = 1000;
   canvas.height = 1000;
@@ -68,11 +77,11 @@
   let startY;
   let hoverIndex = null;
 
-  canvas.addEventListener('mousedown', startDrag);
-  canvas.addEventListener('mousemove', drag);
-  canvas.addEventListener('mouseup', endDrag);
+  // change graph based on user input
+  canvas.addEventListener('pointerdown', startDrag);
+  canvas.addEventListener('pointermove', drag);
+  canvas.addEventListener('pointerup', endDrag);
   canvas.addEventListener('wheel', zoom);
-
   function startDrag(event) {
     isDragging = true;
     startX = event.clientX;
@@ -80,6 +89,7 @@
   }
 
   function drag(event) {
+    readGraph(event)
     if (isDragging) {
       let deltaX = event.clientX - startX;
       let deltaY = event.clientY - startY;
@@ -108,6 +118,16 @@
     scale = Math.max(scale, 0.1);
     drawChart();
   }
+ function readGraph(event){
+  let position =event.clientX
+   let graphPosition= -1
+  if (position<graph.at(graphPosition)){
+target.innerHTML=''    
+target.innerHTML=`${position}`    
+} 
+
+}
+//  used to keep candles within reasonable scale on graph , will add hover effect to display true data 
   function logScale(value) {
   let canvasHeight = canvas.height
   let min = 1/100 * canvasHeight
@@ -115,7 +135,7 @@
   let logRange = max - min;
   let logValue = Math.log(value);
   let normalizedLogValue = (logValue - min) / logRange;
-  let scaledValue = normalizedLogValue * canvasHeight *600;
+  let scaledValue = normalizedLogValue * canvasHeight *1000;
   return Math.abs(scaledValue) ;
 }
   function drawChart() {
@@ -127,36 +147,34 @@
   ctx.save();
   ctx.translate(translateX, translateY);
   ctx.scale(scale, scale);
+  graph=[]
     for (let i = data.length - 1; i >= 0; i--) {
       let High=logScale(data[i].High)
       let Low=logScale(data[i].Low)
       let Open=logScale(data[i].Open)
       let Close=logScale(data[i].Close)
-      let tradecount=logScale(data[i].tradecount)
+      let tradecount=logScale(data[i].tradecount)/10
       let u=-1*i 
       let x = u * (barWidth + barSpacing) + 3*barWidth;
       let barHeight = Close - Open ;
       let y = (Close > Open) ? Open :Close;
-
       // draw candle
       ctx.fillStyle = (Close > Open) ? 'green' : 'red';
       ctx.fillRect(x, y, barWidth, barHeight);
-
+graph.push(`${x}`)
       // draw wick 
       ctx.fillStyle ='blue'
-    ctx.fillRect(x + barWidth/4, High, barWidth/2, 1);
-    ctx.fillRect(x + barWidth/2 -1, High,2, Low -High);
-    ctx.fillRect(x + barWidth/4, Low, barWidth/2, 1);
-    
-    // draw volume
-    ctx.fillStyle =  '#12131221';
-    ctx.fillRect(x , canvas.height- tradecount , barWidth, tradecount);
+      ctx.fillRect(x + barWidth/4, High, barWidth/2, 1);
+      ctx.fillRect(x + barWidth/2 -1, High,2, Low -High);
+      ctx.fillRect(x + barWidth/4, Low, barWidth/2, 1);
+      
+      // draw volume
+      ctx.fillStyle =  '#12131221';
+      ctx.fillRect(x , canvas.height- tradecount , barWidth, tradecount);
     }
     ctx.restore();
     
   }
-
-  console.log(logScale(data[0].High),logScale(data[0].Low),logScale(data[0].Open),logScale(data[0].Close),logScale(data[0].tradecount))
   drawChart();
 })
 </script>
